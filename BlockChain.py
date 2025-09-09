@@ -1,16 +1,16 @@
 
 
 from __future__ import annotations
-import hashlib
-import json
-import time
+import hashlib            #used to import SHA-256 
+import json               # JavaScript Object Notation used for block , transactions --> as objects/strings 
+import time               #timestamps 
 import random
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any
 
 
 def sha256(data: str) -> str:
-    return hashlib.sha256(data.encode("utf-8")).hexdigest()
+    return hashlib.sha256(data.encode("utf-8")).hexdigest()  #Converts string to bytes and implements hash function
 
 def current_timestamp() -> float:
     return time.time()
@@ -21,21 +21,22 @@ class Transaction:
     recipient: str
     amount: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:             #creating key value pair for the transaction 
         return {"sender": self.sender, "recipient": self.recipient, "amount": self.amount}
 
     def id(self) -> str:
-        return sha256(json.dumps(self.to_dict(), sort_keys=True))
+        return sha256(json.dumps(self.to_dict(), sort_keys=True)) #JSON to ids
+        # returns a unique TRANSACTION ID for the transaction in sorted order 
 
 @dataclass
-class Block:
+class Block:      #creates the block of the blockchain 
     index: int
     timestamp: float
     transactions: List[Transaction]
     previous_hash: str
-    nonce: int = 0
-    difficulty: int = 3
-    hash: Optional[str] = None
+    nonce: int = 0      # number miners change until the block hash satisfies the difficulty target (3 here)
+    difficulty: int = 3 #no of leading zeroes the hash must have
+    hash: Optional[str] = None #hash of this block 
 
     def compute_hash(self) -> str:
         block_dict = {
@@ -46,22 +47,22 @@ class Block:
             "nonce": self.nonce,
             "difficulty": self.difficulty,
         }
-        return sha256(json.dumps(block_dict, sort_keys=True))
+        return sha256(json.dumps(block_dict, sort_keys=True)) #Converts the dictionary into a JSON string
 
-class Blockchain:
-    def __init__(self, *, difficulty: int = 3, block_reward: int = 50) -> None:
+class Blockchain:      #the ledger 
+    def __init__(self, *, difficulty: int = 3, block_reward: int = 50) -> None:    #constructor type in python 
         self.difficulty = difficulty
-        self.block_reward = block_reward
-        self.chain: List[Block] = []
+        self.block_reward = block_reward    #how many coins miners get for mining a block
+        self.chain: List[Block] = [] #pending transactions not yet mined
         self.current_transactions: List[Transaction] = []
         self.addresses: Dict[str, int] = {}
-        self.create_genesis_block()
+        self.create_genesis_block()  #the very first block 
 
     def create_genesis_block(self) -> None:
         faucet = "faucet"
         faucet_allocation = 10_000
         self.addresses[faucet] = faucet_allocation
-        genesis_tx = Transaction(sender="coinbase", recipient=faucet, amount=faucet_allocation)
+        genesis_tx = Transaction(sender="coinbase", recipient=faucet, amount=faucet_allocation) #Coinbase to faucet transition 
         block = Block(index=0, timestamp=current_timestamp(), transactions=[genesis_tx], previous_hash="0" * 64, difficulty=self.difficulty)
         block.hash = block.compute_hash()
         self.chain.append(block)
