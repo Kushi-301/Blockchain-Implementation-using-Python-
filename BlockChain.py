@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 import hashlib            #used to import SHA-256 
 import json               # JavaScript Object Notation used for block , transactions --> as objects/strings 
@@ -95,7 +93,7 @@ class Blockchain:      #the ledger
         self.current_transactions.append(tx)
         return tx.id()
 
-    def mine_block(self, miner_address: str) -> Block:
+    def mine_block(self, miner_address: str) -> Block:  #creates a coinbase transaction paying the miner
         coinbase_tx = Transaction(sender="coinbase", recipient=miner_address, amount=self.block_reward)
         txs = [coinbase_tx] + self.current_transactions
         block = Block(
@@ -156,8 +154,8 @@ class Blockchain:      #the ledger
                 self.chain = saved_chain
         return True
 
-    def replace_chain(self, new_chain: List[Block]) -> bool:
-        if len(new_chain) > len(self.chain) and self.valid_chain(new_chain):
+    def replace_chain(self, new_chain: List[Block]) -> bool: #if another node presents a longer and valid chain, this node adopts it
+        if len(new_chain) > len(self.chain) and self.valid_chain(new_chain): #also clears pending transactions 
             self.chain = [
                 Block(
                     index=b.index,
@@ -174,7 +172,7 @@ class Blockchain:      #the ledger
             return True
         return False
 
-class Node:
+class Node:  #participants of the block chain/ledger 
     def __init__(self, name: str, *, difficulty: int = 3, block_reward: int = 50):
         self.name = name
         self.blockchain = Blockchain(difficulty=difficulty, block_reward=block_reward)
@@ -183,12 +181,12 @@ class Node:
     def connect(self, other: "Node") -> None:
         if other is self:
             return
-        if other not in self.peers:
+        if other not in self.peers:  #P2P Networking 
             self.peers.append(other)
         if self not in other.peers:
             other.peers.append(self)
 
-    def broadcast_block(self, block: Block) -> None:
+    def broadcast_block(self, block: Block) -> None: #after mining  node sends new block to all its peers
         for p in self.peers:
             if p.blockchain.valid_block(block, p.blockchain.last_block):
                 p.blockchain.chain.append(block)
@@ -197,12 +195,13 @@ class Node:
     def new_tx(self, sender: str, recipient: str, amount: int) -> str:
         return self.blockchain.add_transaction(sender, recipient, amount)
 
-    def mine(self) -> Block:
+    def mine(self) -> Block:                                       #Miner gets reward coins (block reward).
+                                                                    #Then broadcasts the mined block to peers
         block = self.blockchain.mine_block(miner_address=self.name)
         self.broadcast_block(block)
         return block
 
-    def resolve_conflicts(self) -> bool:
+    def resolve_conflicts(self) -> bool:      #Consensus rule i.e the longest chain is adopted (prevents forking)
         candidate = self.blockchain.chain
         for p in self.peers:
             if len(p.blockchain.chain) > len(candidate) and self.blockchain.valid_chain(p.blockchain.chain):
@@ -212,6 +211,7 @@ class Node:
     def balance(self, address: str) -> int:
         return self.blockchain.get_balance(address)
 
+#THE SIMULATION TAKING P1,P2,P3 - the nodes acting as miners 
 if __name__ == "__main__":
     random.seed(7)
 
