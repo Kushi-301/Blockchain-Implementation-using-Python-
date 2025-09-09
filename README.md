@@ -7,3 +7,8 @@
 3) Nodes P1,P2,P3 acts as miners and are connected in a network.
 
 4) The Consensus algorithm ensures all nodes eventually agree on a single valid chain.
+
+5) To Run the File
+   -Clone the repository.
+   -Run the Python file:
+               python blockchain_network.py
